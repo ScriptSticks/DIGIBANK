@@ -1,0 +1,66 @@
+import { escapeHTML } from "../core/text.js";
+import { brand, icon } from "../components/icons.js";
+
+export function welcomePage() {
+  return `<div class="welcome-page">
+    <header class="welcome-nav">${brand()}<nav class="welcome-nav-actions" aria-label="Account access"><a class="btn btn-outline-secondary" href="#/login" data-route>Log in</a><a class="btn btn-primary" href="#/signup" data-route>Open an account</a></nav></header>
+    <main id="app-main" tabindex="-1">
+      <section class="welcome-main" aria-labelledby="welcome-title">
+        <div><p class="eyebrow">Banking that fits your life</p><h1 id="welcome-title" class="welcome-title">Money, made <span>clear.</span></h1><p class="welcome-copy">Your everyday banking, all in one place. Send money, keep track of your spending, and manage your account on your terms.</p><div class="welcome-actions"><a class="btn btn-primary" href="#/signup" data-route>Open an account ${icon("arrow")}</a><a class="btn btn-outline-secondary" href="#/login" data-route>Log in</a></div><p class="footnote">Your money. Your plans. Your DigiBank.</p></div>
+        <div class="welcome-art" aria-hidden="true"><div class="surface banking-preview"><div class="preview-top"><span>YOUR EVERYDAY ACCOUNT</span>${icon("bank")}</div><div class="preview-amount">A clearer view<br>of your money.</div><div class="preview-line"></div><div class="preview-line short"></div><div class="detail-row"><span>Account status</span><span class="status-pill">Active</span></div></div><div class="surface preview-transfer"><div class="d-flex align-items-center gap-2"><span class="action-icon">${icon("success")}</span><div><strong class="d-block small">Transfer complete</strong><small class="text-secondary">A little less to think about.</small></div></div></div></div>
+      </section>
+      <section class="welcome-features" aria-label="Everyday banking with DigiBank">
+        <article><span class="action-icon">${icon("transfer")}</span><h2>Send money with ease</h2><p>Transfer to another DigiBank account in a few simple steps.</p></article>
+        <article><span class="action-icon cyan">${icon("transactions")}</span><h2>Stay on top of spending</h2><p>Find your transfers and incoming payments in one clear account history.</p></article>
+        <article><span class="action-icon">${icon("loan")}</span><h2>Plan your next move</h2><p>Apply for a loan and follow your application from submission to decision.</p></article>
+      </section>
+    </main>
+    <footer class="welcome-footer"><span>&copy; ${new Date().getFullYear()} DigiBank.</span><span>Everyday banking, made simple.</span></footer>
+  </div>`;
+}
+
+function authFrame(title, intro, body, wide = false) {
+  return `<section class="auth-wrap"><section class="surface auth-card${wide ? " wide" : ""}"><div class="auth-brand">${brand()}</div><p class="eyebrow">DigiBank online banking</p><h1>${title}</h1><p class="auth-intro">${intro}</p>${body}</section></section>`;
+}
+
+export function loginPage(admin = false) {
+  const title = admin ? "Administrator log in" : "Welcome back";
+  const intro = admin ? "Use the fictional administrator credentials for the demo workspace." : "Log in to manage your money and everyday banking.";
+  const loginForm = `<form data-form="login" data-admin="${admin}" novalidate>
+    <div class="mb-3"><label class="form-label" for="login-email">Email address</label><input class="form-control" id="login-email" name="email" type="email" autocomplete="username" maxlength="120" required></div>
+    <div class="mb-2"><label class="form-label" for="login-password">Password</label><div class="input-group"><input class="form-control" id="login-password" name="password" type="password" autocomplete="current-password" required><button class="btn btn-outline-secondary password-toggle" type="button" data-action="toggle-password" aria-label="Show password">${icon("eye")}</button></div></div>
+    <p class="form-error" data-error></p><button class="btn btn-primary w-100 mt-2" type="submit">Log in</button>
+  </form>`;
+  const links = admin ? '<a class="btn btn-link px-0 mt-2" href="#/login" data-route>Customer login</a>' : '<div class="auth-links mt-3"><a class="btn btn-link px-0" href="#/forgot-password" data-route>Forgot password?</a><a class="btn btn-link px-0" href="#/admin/login" data-route>Staff login</a></div><p class="mb-0 mt-3 small">New to DigiBank? <a href="#/signup" data-route>Open an account</a></p>';
+  return authFrame(title, intro, `${loginForm}${links}`);
+}
+
+export function signupPage() {
+  return authFrame("Open your DigiBank account", "A simpler way to manage your money starts here.", `<form data-form="signup" novalidate>
+    <div class="row g-3">
+      <div class="col-md-6"><label class="form-label" for="signup-name">Full name</label><input class="form-control" id="signup-name" name="fullName" autocomplete="name" minlength="2" maxlength="80" required></div>
+      <div class="col-md-6"><label class="form-label" for="signup-username">Username</label><input class="form-control" id="signup-username" name="username" autocomplete="username" pattern="[A-Za-z0-9_]{3,24}" minlength="3" maxlength="24" required><div class="form-text">3–24 letters, numbers, or underscores</div></div>
+      <div class="col-md-6"><label class="form-label" for="signup-email">Email address</label><input class="form-control" id="signup-email" name="email" type="email" autocomplete="email" maxlength="120" required></div>
+      <div class="col-md-6"><label class="form-label" for="signup-phone">Phone number</label><input class="form-control" id="signup-phone" name="phone" type="tel" autocomplete="tel" minlength="7" maxlength="20" required></div>
+      <div class="col-md-6"><label class="form-label" for="signup-password">Password</label><div class="input-group"><input class="form-control" id="signup-password" name="password" type="password" autocomplete="new-password" minlength="10" maxlength="72" required><button class="btn btn-outline-secondary password-toggle" type="button" data-action="toggle-password" aria-label="Show password">${icon("eye")}</button></div><div class="form-text">Use at least 10 characters and a password you don't use elsewhere.</div></div>
+      <div class="col-md-6"><label class="form-label" for="signup-confirm">Confirm password</label><input class="form-control" id="signup-confirm" name="confirmPassword" type="password" autocomplete="new-password" minlength="10" maxlength="72" required></div>
+    </div><p class="form-error" data-error></p><button class="btn btn-primary w-100 mt-1" type="submit">Create account</button>
+  </form><p class="footnote">Keep your login details private. Never share your password or recovery code.</p><p class="mb-0 small">Already registered? <a href="#/login" data-route>Log in</a></p>`, true);
+}
+
+export function signupSuccessPage(account) {
+  return authFrame("Welcome to DigiBank", "Your account is ready. Let's get you started.", `<div class="form-success mb-3">${icon("success", "me-2")} Account created successfully</div><div class="surface p-3 mb-3"><div class="detail-row"><span>Account number</span><strong data-account-id>${escapeHTML(account.accountId)}</strong></div></div><button class="btn btn-primary w-100" type="button" data-action="continue-dashboard">Go to dashboard</button>`);
+}
+
+export function forgotPasswordPage() {
+  return authFrame("Reset your password", "Enter the email address associated with your account to begin recovery.", `<form data-form="forgot" novalidate><div class="mb-3"><label class="form-label" for="recovery-email">Email address</label><input class="form-control" id="recovery-email" name="email" type="email" autocomplete="email" maxlength="120" required></div><p class="form-error" data-error></p><button class="btn btn-primary w-100" type="submit">Continue</button></form><a class="btn btn-link px-0 mt-3" href="#/login" data-route>Back to log in</a>`);
+}
+
+export function otpPage(recoveryEmail, demoCode) {
+  const codeNote = demoCode ? `<div class="notice-banner mb-3">${icon("lock")}<span>Your recovery code: <strong>${escapeHTML(demoCode)}</strong>. Keep this code private.</span></div>` : "";
+  return authFrame("Enter your recovery code", "Enter the six-digit code to continue resetting your password.", `${codeNote}<form data-form="otp" novalidate><div class="mb-3"><label class="form-label" for="otp-code">Recovery code</label><input class="form-control" id="otp-code" name="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" minlength="6" maxlength="6" required><input type="hidden" name="email" value="${escapeHTML(recoveryEmail)}"></div><p class="form-error" data-error></p><button class="btn btn-primary w-100" type="submit">Verify code</button></form><a class="btn btn-link px-0 mt-3" href="#/forgot-password" data-route>Request another code</a>`);
+}
+
+export function resetPasswordPage(recoveryEmail, recoveryCode) {
+  return authFrame("Choose a new password", "Use at least 10 characters and choose a password you haven't used before.", `<form data-form="reset-password" novalidate><input type="hidden" name="email" value="${escapeHTML(recoveryEmail)}"><input type="hidden" name="code" value="${escapeHTML(recoveryCode)}"><div class="mb-3"><label class="form-label" for="new-password">New password</label><input class="form-control" id="new-password" name="password" type="password" autocomplete="new-password" minlength="10" maxlength="72" required></div><div class="mb-3"><label class="form-label" for="confirm-new-password">Confirm new password</label><input class="form-control" id="confirm-new-password" name="confirmPassword" type="password" autocomplete="new-password" minlength="10" maxlength="72" required></div><p class="form-error" data-error></p><button class="btn btn-primary w-100" type="submit">Update password</button></form>`);
+}
