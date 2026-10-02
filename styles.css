@@ -24,23 +24,25 @@ a { color: inherit; }
 button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 3px solid rgb(43 183 218 / 55%); outline-offset: 2px; }
 .skip-link { position: fixed; z-index: 20; top: 8px; left: 8px; transform: translateY(-150%); padding: 10px 14px; background: var(--color-white); }
 .skip-link:focus { transform: translateY(0); }
-.app-shell { min-height: 100vh; }
-.topbar { position: sticky; z-index: 5; top: 0; height: 72px; border-bottom: 1px solid var(--color-line); background: rgb(255 255 255 / 94%); backdrop-filter: blur(14px); }
+/* Keep navigation in the viewport; the main panel owns dashboard scrolling. */
+.app-shell { display: flex; flex-direction: column; height: 100vh; height: 100dvh; overflow: hidden; }
+.topbar { position: sticky; z-index: 5; top: 0; flex-shrink: 0; height: 72px; border-bottom: 1px solid var(--color-line); background: rgb(255 255 255 / 94%); backdrop-filter: blur(14px); }
 .topbar-inner { display: flex; align-items: center; justify-content: space-between; height: 100%; padding: 0 34px; }
 .brand { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; font-family: var(--font-display); font-size: 20px; font-weight: 800; }
 .brand-mark { display: grid; flex: 0 0 34px; width: 34px; height: 34px; place-items: center; border-radius: 11px; background: var(--color-primary); color: #103a20; }
 .brand-mark svg { width: 21px; height: 21px; }
 .secure-label { display: flex; align-items: center; gap: 8px; color: #57675e; font-size: 12px; }
 .secure-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--color-primary); box-shadow: 0 0 0 4px rgb(49 211 92 / 13%); }
-.workspace { display: grid; grid-template-columns: 236px minmax(0, 1fr); min-height: calc(100vh - 72px); }
-.sidebar { display: flex; flex-direction: column; gap: 24px; padding: 30px 18px 22px; border-right: 1px solid var(--color-line); background: var(--color-white); }
+.workspace { display: grid; flex: 1; grid-template-columns: 236px minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); min-height: 0; overflow: hidden; }
+.sidebar { display: flex; flex-direction: column; min-height: 0; gap: 24px; padding: 30px 18px 22px; border-right: 1px solid var(--color-line); background: var(--color-white); }
+.sidebar > div:first-child { min-height: 0; overflow-y: auto; }
 .nav-caption { margin: 0 0 9px 12px; color: #9aa69f; font-size: 10px; font-weight: 700; text-transform: uppercase; }
 .side-link { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 44px; padding: 0 12px; border: 0; border-radius: 8px; background: transparent; color: #68776f; text-align: left; text-decoration: none; transition: background .18s ease, color .18s ease; }
 .side-link svg { width: 19px; height: 19px; }
 .side-link:hover, .side-link.active { background: #edf8ef; color: #1d7934; }
 .side-link.active { font-weight: 700; }
-.side-bottom { margin-top: auto; padding-top: 16px; border-top: 1px solid var(--color-line); }
-.main-content { min-width: 0; width: 100%; max-width: 1440px; margin: 0 auto; padding: 38px clamp(20px, 4vw, 60px) 60px; animation: enter .28s ease both; }
+.side-bottom { flex-shrink: 0; margin-top: auto; padding-top: 16px; border-top: 1px solid var(--color-line); }
+.main-content { min-width: 0; min-height: 0; overflow-y: auto; width: 100%; max-width: 1440px; margin: 0 auto; padding: 38px clamp(20px, 4vw, 60px) 60px; animation: enter .28s ease both; }
 .row > *, .welcome-main > *, .page-heading > *, .section-header > *, .profile-row > *, .quick-action > *, .detail-row > * { min-width: 0; }
 .surface, .auth-card { min-width: 0; }
 .profile-row, .detail-row, .subheading, .notice-banner, .form-error { overflow-wrap: anywhere; }
@@ -166,7 +168,7 @@ h1, h2, h3, h4 { font-family: var(--font-display); }
   .topbar { height: 62px; }
   .topbar-inner { padding: 0 17px; }
   .secure-label { font-size: 10px; }
-  .workspace { display: block; min-height: calc(100vh - 62px); padding-bottom: calc(78px + env(safe-area-inset-bottom)); }
+  .workspace { grid-template-columns: minmax(0, 1fr); padding-bottom: calc(78px + env(safe-area-inset-bottom)); }
   .sidebar { display: none; }
   .mobile-logout { display: inline-grid; }
   .main-content { padding: 25px 16px 38px; }
