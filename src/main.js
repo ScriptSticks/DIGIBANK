@@ -1,5 +1,7 @@
 import { Router } from "./core/router.js";
 import { StateManager } from "./core/state-manager.js";
+import { applyTheme, setTheme } from "./core/theme.js";
+import { downloadPhoto, preparePhoto } from "./core/profile-photo.js";
 import { DEFAULT_STARTING_BALANCE, USER_ROLE } from "./core/constants.js";
 import { AccountRepository, TransactionRepository, UserRepository } from "./data/repositories.js";
 import { AdminService, AuthService, BankingService, resetMockData } from "./services/services.js";
@@ -22,6 +24,7 @@ let recoveryCode = "";
 let createdAccount = null;
 let balanceVisible = true;
 let transactionFilter = { search: "", type: "ALL" };
+let photoRequest = null;
 
 function showToast(message, kind = "success") {
   const toast = document.createElement("div");
@@ -42,6 +45,9 @@ function getVisibleTransactions(userId) {
 }
 
 function renderPage(pageName, { path, currentUser }) {
+  // Navigation or a session change cancels any in-flight photo update.
+  photoRequest?.abort();
+  photoRequest = null;
   let content;
   if (pageName === "welcome") content = welcomePage();
   else if (pageName === "login") content = loginPage(false);
@@ -68,6 +74,7 @@ function renderPage(pageName, { path, currentUser }) {
   } else {
     appRoot.innerHTML = pageName === "welcome" ? content : `<main id="app-main" tabindex="-1">${content ?? notFoundPage()}</main>`;
   }
+  applyTheme(Boolean(currentUser));
   if (pageName === "transactions") {
     const search = appRoot.querySelector("#transaction-search");
     const type = appRoot.querySelector("#transaction-type");
@@ -135,6 +142,10 @@ function validateForm(form) {
 
 async function handleFormSubmit(form) {
   const formType = form.dataset.form;
+  if (formType.startsWith("profile-photo-")) {
+    await handlePhotoSubmit(form);
+    return;
+  }
   if (formType === "transaction-filter") {
     const values = formValues(form);
     transactionFilter = { search: values.search ?? "", type: values.type ?? "ALL" };
@@ -198,6 +209,53 @@ async function handleFormSubmit(form) {
   }
 }
 
+async function handlePhotoSubmit(form) {
+  if (photoRequest || !validateForm(form)) return;
+  const userId = auth.getCurrentUser()?.id;
+  if (!userId) return;
+  const request = new AbortController();
+  photoRequest = request;
+  let timedOut = false;
+  const timeout = window.setTimeout(() => { timedOut = true; request.abort(); }, 15000);
+  const controls = [...appRoot.querySelectorAll("[data-photo-controls]")];
+  const button = form.querySelector('button[type="submit"]');
+  const label = button.textContent;
+  // Read fields before disabling them; disabled inputs are omitted from FormData.
+  const values = formValues(form);
+  controls.forEach((fieldset) => { fieldset.disabled = true; });
+  button.textContent = "Saving photo…";
+  form.setAttribute("aria-busy", "true");
+  setFormError(form, "");
+  try {
+    let photo = null;
+    if (form.dataset.form !== "profile-photo-remove") {
+      const blob = form.dataset.form === "profile-photo-url" ? await downloadPhoto(values.photoUrl.trim(), request.signal) : values.photo;
+      photo = await preparePhoto(blob, request.signal);
+    }
+    request.signal.throwIfAborted();
+    if (!form.isConnected || auth.getCurrentUser()?.id !== userId) return;
+    auth.updateProfilePhoto(photo);
+    router.resolve();
+    document.querySelector("#profile-photo-file")?.focus();
+    showToast(photo ? "Profile photo saved." : "Profile photo removed.");
+  } catch (error) {
+    if (form.isConnected && (!request.signal.aborted || timedOut)) {
+      setFormError(form, timedOut ? "The image took too long to load. Try another URL or upload it from your device." : error instanceof Error ? error.message : "Could not save this photo. Please try again.");
+    }
+  } finally {
+    window.clearTimeout(timeout);
+    if (photoRequest === request) photoRequest = null;
+    controls.forEach((fieldset) => { fieldset.disabled = false; });
+    button.textContent = label;
+    form.removeAttribute("aria-busy");
+  }
+}
+
+// Broken or tampered stored images fall back to the initials underneath.
+appRoot.addEventListener("error", (event) => {
+  if (event.target instanceof HTMLImageElement && event.target.classList.contains("avatar-photo")) event.target.remove();
+}, true);
+
 appRoot.addEventListener("submit", (event) => {
   const form = event.target.closest("form[data-form]");
   if (!form) return;
@@ -209,7 +267,9 @@ appRoot.addEventListener("click", async (event) => {
   const action = event.target.closest("[data-action]");
   if (!action) return;
   const actionName = action.dataset.action;
-  if (actionName === "logout") {
+  if (actionName === "set-theme") {
+    setTheme(action.dataset.theme);
+  } else if (actionName === "logout") {
     auth.logout();
     router.navigateTo(action.dataset.logoutPath || "/");
   } else if (actionName === "toggle-password") {

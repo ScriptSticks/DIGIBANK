@@ -50,6 +50,8 @@ src/
 
 ## Architecture
 
+After login, the shared header provides Light and Dark theme controls for both customer and administrator pages. The choice is saved under `digibank.theme` in local storage and restored at the next login. If storage is unavailable, the choice lasts for the current page session. Public and login screens use the light theme.
+
 The pages render UI and collect input. Services normalize and validate input and apply the demo's business rules. Repositories isolate reads and writes from the services. `MockStorage` persists only fictional business records in the browser. This keeps a later repository replacement possible without tying page code to local storage.
 
 The Router uses the URL hash (for example `#/dashboard`) so the app can run from a static server without server-side URL rewrite configuration. It checks whether a page should be shown to a signed-in customer or administrator to guide navigation. Those checks are not an authorization boundary.
@@ -70,6 +72,18 @@ These fictional development credentials are intentionally hardcoded and visible 
 Fictional user, account, transaction, loan, and notification records are stored under the `digibank.mock-data.v1` local-storage key. To reset them, press **Alt+R** while the app is open, or remove that key in the browser's developer tools and reload. Reset restores the fictional demo customer and administrator. This does not contact or affect any real financial system.
 
 ## Secure Frontend Practices and Limits
+
+### Profile photos
+
+Customers can save a device image or import a direct HTTPS image URL from their Profile page, or remove the photo to restore initials. The same photo appears on the dashboard. JPEG, PNG, and WebP inputs are limited to 8 MiB, 20 million pixels, and 8,192 pixels per side. Input signatures, declared MIME types, dimensions, and browser decoding are checked. SVG, HTML, GIF, and animated WebP inputs are rejected. Accepted images are center-cropped and re-encoded as a 256 × 256 JPEG, discarding original metadata and embedded extra content. A fixed circular avatar uses `object-fit: cover` and cannot grow with the source image.
+
+URL imports require CORS permission from the image host. They omit credentials and referrers, reject redirects, block non-HTTPS schemes, embedded credentials, custom ports, IP literals, and common local hostname suffixes, cap streamed response bytes, and time out after 15 seconds. The URL host is contacted only when importing; the original URL is not saved or used for ongoing avatar display. Browser-side hostname checks cannot verify the public IP behind a DNS name. There is no server-side fetch proxy in this project.
+
+Only bounded JPEG data URLs are rendered, attributes are escaped, and failed image loads fall back to initials without inline event handlers. Navigation or logout cancels an in-flight update. Photos are saved to the current fictional customer's browser record; storage failures leave the previous photo intact and show an error. This remains a frontend demo: production uploads require independent authenticated server-side validation, image processing, storage limits, and network controls for URL imports. See [OWASP's file-upload guidance](https://cheatsheetseries.owasp.org/cheatsheets/File_Upload_Cheat_Sheet.html).
+
+Run the photo regression checks with Node.js 20 or newer: `node tests/run-profile-photo.mjs`. They cover validation, bounded downloads, crop calculations, rendering safety, persistence failures, and session changes with browser API test doubles; they do not replace browser visual testing.
+
+### Other frontend practices
 
 - User-controlled text is escaped before it is placed in HTML templates; toast messages use `textContent`.
 - Forms use visible labels, semantic input types, browser constraints, normalization, and service-level validation.

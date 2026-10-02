@@ -22,6 +22,10 @@ export class UserRepository extends BaseRepository {
   findById(id) { return this.all().find((user) => user.id === id) ?? null; }
   findByEmail(email) { return this.all().find((user) => user.email.toLowerCase() === email.toLowerCase()) ?? null; }
   create(user) { this.saveAll([...this.all(), user]); return user; }
+  updatePhoto(userId, profilePhoto) {
+    const users = this.all().map((user) => user.id === userId ? { ...user, profilePhoto } : user);
+    storage.write({ ...storage.data, users }, { requirePersistence: true });
+  }
 }
 
 export class AccountRepository extends BaseRepository {

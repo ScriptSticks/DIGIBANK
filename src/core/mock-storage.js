@@ -33,13 +33,14 @@ export class MockStorage {
     return initialData;
   }
 
-  write(nextData = this.data) {
-    this.data = nextData;
+  write(nextData = this.data, { requirePersistence = false } = {}) {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(nextData));
     } catch (error) {
+      if (requirePersistence) throw new Error("Your photo could not be saved. Browser storage is full or unavailable; free some space and try again.");
       console.warn("DigiBank mock data is available only for this page session.", error);
     }
+    this.data = nextData;
   }
 
   reset() {

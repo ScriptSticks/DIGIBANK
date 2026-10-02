@@ -19,7 +19,7 @@ export function renderShell(content, { currentUser, activePath, logoutPath = "/"
   const links = isAdmin ? adminLinks : customerLinks;
   const navLinks = links.map((item) => linkMarkup(item, activePath)).join("");
   return `<div class="app-shell">
-    <header class="topbar"><div class="topbar-inner">${brand()}<div class="d-flex align-items-center gap-3"><div class="secure-label"><span class="secure-dot"></span><span>Online banking</span></div><button class="icon-button mobile-logout" type="button" data-action="logout" data-logout-path="${logoutPath}" aria-label="Log out">${icon("logout")}</button></div></div></header>
+    <header class="topbar"><div class="topbar-inner">${brand()}<div class="header-actions"><div class="secure-label"><span class="secure-dot"></span><span>Online banking</span></div><div class="theme-switch" role="group" aria-label="Color theme"><button class="theme-option" type="button" data-action="set-theme" data-theme="light" aria-label="Light mode" aria-pressed="true" title="Light mode">${icon("sun")}<span>Light</span></button><button class="theme-option" type="button" data-action="set-theme" data-theme="dark" aria-label="Dark mode" aria-pressed="false" title="Dark mode">${icon("moon")}<span>Dark</span></button></div><button class="icon-button mobile-logout" type="button" data-action="logout" data-logout-path="${logoutPath}" aria-label="Log out">${icon("logout")}</button></div></div></header>
     <div class="workspace">
       <aside class="sidebar" aria-label="Main navigation">
         <div><p class="nav-caption">${isAdmin ? "Administration" : "Your banking"}</p>${navLinks}</div>

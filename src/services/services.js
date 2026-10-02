@@ -1,4 +1,5 @@
 import { DEFAULT_STARTING_BALANCE, LOAN_STATUS, TRANSACTION_STATUS, USER_ROLE } from "../core/constants.js";
+import { isSafePhoto } from "../core/profile-photo.js";
 import { AccountRepository, LoanRepository, NotificationRepository, TransactionRepository, UserRepository, storage } from "../data/repositories.js";
 
 const users = new UserRepository();
@@ -34,6 +35,13 @@ export class AuthService {
   }
 
   getCurrentUser() { return users.findById(this.stateManager.getCurrentUserId()); }
+
+  updateProfilePhoto(photo) {
+    const user = this.getCurrentUser();
+    if (!user || user.role !== USER_ROLE.CUSTOMER) throw new Error("Sign in as a customer to update your photo.");
+    if (photo !== null && !isSafePhoto(photo)) throw new Error("Choose a valid profile photo.");
+    users.updatePhoto(user.id, photo);
+  }
 
   signup(formValues) {
     const fullName = formValues.fullName.trim().replace(/\s+/g, " ");
