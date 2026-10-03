@@ -8,6 +8,9 @@ try {
 }
 
 export function applyTheme(signedIn) {
+  // Bootstrap and our CSS both read this attribute. Updating it changes colors
+  // without replacing the page, so unsaved inputs and scroll position are preserved.
+  // Public pages stay light, but the saved preference is kept for the next login.
   const theme = signedIn ? preferredTheme : "light";
   document.documentElement.dataset.bsTheme = theme;
   document.querySelector('meta[name="theme-color"]')?.setAttribute("content", theme === "dark" ? "#111a17" : "#f7faf8");

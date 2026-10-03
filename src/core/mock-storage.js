@@ -22,6 +22,9 @@ export class MockStorage {
   }
 
   read() {
+    // localStorage contains strings, so JSON turns our record collections into
+    // objects again. Missing/unreadable data falls back to fictional seed records.
+    // Parsing JSON does not make it trustworthy; validate data again where it is used.
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) return JSON.parse(saved);
@@ -34,6 +37,9 @@ export class MockStorage {
   }
 
   write(nextData = this.data, { requirePersistence = false } = {}) {
+    // Commit to storage before replacing the in-memory data. Photo saves require
+    // persistence: if the browser is full/blocked, the old photo must remain intact.
+    // Other demo workflows can still work in memory when storage is unavailable.
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(nextData));
     } catch (error) {

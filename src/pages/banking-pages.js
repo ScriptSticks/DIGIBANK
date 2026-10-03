@@ -2,8 +2,11 @@ import { DEFAULT_STARTING_BALANCE, formatDate, formatMoney } from "../core/const
 import { escapeHTML } from "../core/text.js";
 import { icon } from "../components/icons.js";
 import { avatar } from "../components/avatar.js";
-import { isSafePhoto } from "../core/profile-photo.js";
+import { editableAvatar, profilePhotoEditor } from "../components/profile-photo-editor.js";
 
+// Page functions only build markup from the data they receive. main.js owns user
+// interactions and services own updates. Escape record values before interpolation;
+// interpolated fragments such as avatar() are trusted, application-built HTML.
 function heading(title, subtitle, action = "") {
   return `<div class="page-heading"><div><p class="eyebrow">Your DigiBank</p><h1>${title}</h1><p class="subheading">${subtitle}</p></div>${action}</div>`;
 }
@@ -52,28 +55,9 @@ export function loanPage(loanList) {
     <div class="row g-3"><div class="col-lg-6"><section class="surface p-4"><h2 class="section-title">Request a loan</h2><p class="text-secondary small">Tell us how much you need and what you have planned. Your application will be reviewed before a decision is made.</p><form data-form="loan" novalidate><div class="mb-3"><label class="form-label" for="loan-amount">Amount (NGN)</label><input class="form-control" id="loan-amount" name="amount" type="number" min="10000" max="5000000" step="1000" required><div class="form-text">₦10,000–₦5,000,000</div></div><div class="mb-3"><label class="form-label" for="loan-purpose">Purpose</label><textarea class="form-control" id="loan-purpose" name="purpose" rows="3" minlength="8" maxlength="240" required></textarea></div><p class="form-error" data-error></p><button class="btn btn-primary" type="submit">Submit request</button></form></section></div><div class="col-lg-6"><section class="surface p-4"><h2 class="section-title">Your requests</h2>${rows}</section></div></div>`;
 }
 
-function profilePhotoEditor(user) {
-  return `<section class="surface p-4 mb-3 photo-editor" aria-labelledby="photo-heading">
-    <h2 class="section-title" id="photo-heading">Profile photo</h2>
-    <p class="form-text" id="photo-help">Choose a JPEG, PNG, or WebP up to 8 MB, 20 megapixels, and 8,192 pixels per side. Your photo will be cropped to fit the circle.</p>
-    <form data-form="profile-photo-file" novalidate><fieldset data-photo-controls>
-      <label class="form-label" for="profile-photo-file">Upload from your device</label>
-      <input class="form-control" id="profile-photo-file" name="photo" type="file" accept="image/jpeg,image/png,image/webp" aria-describedby="photo-help" required>
-      <p class="form-error" data-error role="alert"></p><button class="btn btn-outline-secondary" type="submit">Save uploaded photo</button>
-    </fieldset></form>
-    <form class="mt-3" data-form="profile-photo-url" novalidate><fieldset data-photo-controls>
-      <label class="form-label" for="profile-photo-url">Or use an image URL</label>
-      <input class="form-control" id="profile-photo-url" name="photoUrl" type="url" maxlength="2048" placeholder="https://example.com/photo.jpg" aria-describedby="photo-url-help" required>
-      <p class="form-text" id="photo-url-help">Use a direct HTTPS link from a host that allows image imports. Loading it contacts that host once; your saved photo stays in this browser.</p>
-      <p class="form-error" data-error role="alert"></p><button class="btn btn-outline-secondary" type="submit">Save photo from URL</button>
-    </fieldset></form>
-    ${isSafePhoto(user.profilePhoto) ? '<form class="mt-3" data-form="profile-photo-remove"><fieldset data-photo-controls><button class="btn btn-link" type="submit">Remove photo and use initials</button><p class="form-error" data-error role="alert"></p></fieldset></form>' : ""}
-  </section>`;
-}
-
 export function profilePage(user, account) {
   return `${heading("Profile", "Your personal and account information, at a glance.")}
-    <div class="row g-3"><div class="col-lg-7"><section class="surface p-4"><div class="profile-row mb-4">${avatar(user)}<div><strong>${escapeHTML(user.fullName)}</strong><small>Customer account</small></div></div><div class="detail-row"><span>Full name</span><strong>${escapeHTML(user.fullName)}</strong></div><div class="detail-row"><span>Username</span><strong>${escapeHTML(user.username)}</strong></div><div class="detail-row"><span>Email</span><strong>${escapeHTML(user.email)}</strong></div><div class="detail-row"><span>Phone</span><strong>${escapeHTML(user.phone)}</strong></div><div class="detail-row"><span>Account number</span><strong>${escapeHTML(account.accountId)}</strong></div><div class="detail-row"><span>Balance</span><strong>${formatMoney(account.balance)}</strong></div><div class="detail-row"><span>Member since</span><strong>${formatDate(user.createdAt)}</strong></div></section></div><div class="col-lg-5">${profilePhotoEditor(user)}<div class="notice-banner">${icon("lock")}<span>Keep your account details private. Always log out when using a shared device.</span></div></div></div>`;
+    <div class="row g-3"><div class="col-lg-7"><section class="surface p-4"><div class="profile-row mb-4">${editableAvatar(user)}<div><strong>${escapeHTML(user.fullName)}</strong><small>Customer account</small></div></div>${profilePhotoEditor(user)}<div class="detail-row"><span>Full name</span><strong>${escapeHTML(user.fullName)}</strong></div><div class="detail-row"><span>Username</span><strong>${escapeHTML(user.username)}</strong></div><div class="detail-row"><span>Email</span><strong>${escapeHTML(user.email)}</strong></div><div class="detail-row"><span>Phone</span><strong>${escapeHTML(user.phone)}</strong></div><div class="detail-row"><span>Account number</span><strong>${escapeHTML(account.accountId)}</strong></div><div class="detail-row"><span>Balance</span><strong>${formatMoney(account.balance)}</strong></div><div class="detail-row"><span>Member since</span><strong>${formatDate(user.createdAt)}</strong></div></section></div><div class="col-lg-5"><div class="notice-banner">${icon("lock")}<span>Keep your account details private. Always log out when using a shared device.</span></div></div></div>`;
 }
 
 export function notFoundPage() {

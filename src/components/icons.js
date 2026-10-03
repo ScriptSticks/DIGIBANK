@@ -1,4 +1,7 @@
 const paths = {
+  edit: '<path d="m15 5 4 4M4 20l4-1L20 7a2.8 2.8 0 0 0-4-4L4 15v5Z"/>',
+  upload: '<path d="M12 16V3m-5 5 5-5 5 5M4 15v5h16v-5"/>',
+  link: '<path d="m10 13 4-4m-5 7-2 2a4.2 4.2 0 0 1-6-6l4-4a4.2 4.2 0 0 1 6 0m2 0 2-2a4.2 4.2 0 0 1 6 6l-4 4a4.2 4.2 0 0 1-6 0"/>',
   sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/>',
   moon: '<path d="M20.8 13A9 9 0 0 1 11 3.2 9 9 0 1 0 20.8 13Z"/>',
   bank: '<path d="M3 9h18M5 9v10m4-10v10m6-10v10m4-10v10M3 21h18M12 3 2.5 8h19L12 3Z"/>',
@@ -26,6 +29,8 @@ const paths = {
   empty: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 9h10M7 13h6"/>',
 };
 
+// SVG paths above are application-owned markup, not uploaded/user-supplied SVG.
+// currentColor makes each icon inherit its surrounding text color in either theme.
 export function icon(name, className = "") {
   return `<svg class="icon ${className}" width="20" height="20" aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${paths[name] ?? paths.warning}</svg>`;
 }

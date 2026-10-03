@@ -10,6 +10,9 @@ import { adminDashboardPage } from "./pages/admin-pages.js";
 import { dashboardPage, loanPage, notFoundPage, profilePage, transactionsPage, transferPage } from "./pages/banking-pages.js";
 import { forgotPasswordPage, loginPage, otpPage, resetPasswordPage, signupPage, signupSuccessPage, welcomePage } from "./pages/public-pages.js";
 
+// Start here when reading the app: the router chooses a page, page functions
+// return HTML, and the handlers below pass user input to services. Repositories
+// handle persistence so page templates never need to read localStorage directly.
 const state = new StateManager();
 const auth = new AuthService(state);
 const banking = new BankingService();
@@ -44,6 +47,8 @@ function getVisibleTransactions(userId) {
   });
 }
 
+// Every navigation replaces #app's contents. Keep listeners on #app itself,
+// because listeners attached to individual buttons would disappear on replacement.
 function renderPage(pageName, { path, currentUser }) {
   // Navigation or a session change cancels any in-flight photo update.
   photoRequest?.abort();
@@ -88,6 +93,8 @@ function pageTitle(pageName) {
   return ({ welcome: "Welcome", login: "Log in", adminLogin: "Administrator log in", signup: "Create account", signupSuccess: "Account created", forgotPassword: "Password recovery", otp: "Verify code", resetPassword: "Reset password", dashboard: "Dashboard", transfer: "Transfer", transactions: "Transactions", loan: "Loans", profile: "Profile", adminDashboard: "Administration", notFound: "Page not found" })[pageName] ?? "DigiBank";
 }
 
+// Route flags describe which screens the router should show. They guide the UI;
+// they cannot authorize real banking operations because users control browser code.
 const routes = {
   "/": { page: "welcome" },
   "/signup": { page: "signup" },
@@ -112,6 +119,8 @@ const router = new Router({
   getUserById: (id) => users.findById(id),
 });
 
+// Login/logout changes the in-memory identity. Re-resolving immediately keeps the
+// screen and navigation in sync without making services depend on page templates.
 state.subscribe(() => router.resolve());
 
 function formValues(form) {
@@ -124,6 +133,9 @@ function setFormError(form, message) {
 }
 
 function validateForm(form) {
+  // Native constraints (required, minlength, etc.) handle field-level feedback.
+  // Matching passwords span two fields, so we add that rule with setCustomValidity.
+  // Services still validate business rules; browser form checks can be bypassed.
   if (form.dataset.form === "signup") {
     const values = formValues(form);
     const confirmation = form.elements.namedItem("confirmPassword");
@@ -209,6 +221,43 @@ async function handleFormSubmit(form) {
   }
 }
 
+function setPhotoOptions(open, restoreFocus = false) {
+  const options = appRoot.querySelector("#photo-options");
+  const trigger = appRoot.querySelector("#edit-profile-photo");
+  if (!options || !trigger) return;
+  options.hidden = !open;
+  trigger.setAttribute("aria-expanded", String(open));
+  // These are ordinary buttons, not an ARIA menu: Tab/Enter keep their native
+  // behavior. Move focus into the choices, then back to the trigger on dismissal.
+  if (open) options.querySelector("button")?.focus();
+  else if (restoreFocus) trigger.focus();
+}
+
+function showPhotoEditor(source) {
+  const panel = appRoot.querySelector("#photo-editor");
+  if (!panel) return;
+  setPhotoOptions(false);
+  panel.hidden = false;
+  for (const name of ["file", "url"]) {
+    panel.querySelector(`[data-form="profile-photo-${name}"]`).hidden = name !== source;
+  }
+  const input = panel.querySelector(`#profile-photo-${source}`);
+  input.focus();
+  // A file picker must open directly from the user's click; waiting for an async
+  // task first can make the browser block it as an unsolicited popup.
+  if (source === "file") input.click();
+}
+
+function closePhotoEditor() {
+  const panel = appRoot.querySelector("#photo-editor");
+  if (!panel) return;
+  // Cancellation keeps a download from updating the photo after the editor closes.
+  // Its finally block releases the busy state, so a second save cannot race it.
+  photoRequest?.abort();
+  panel.hidden = true;
+  setPhotoOptions(false, true);
+}
+
 async function handlePhotoSubmit(form) {
   if (photoRequest || !validateForm(form)) return;
   const userId = auth.getCurrentUser()?.id;
@@ -232,11 +281,13 @@ async function handlePhotoSubmit(form) {
       const blob = form.dataset.form === "profile-photo-url" ? await downloadPhoto(values.photoUrl.trim(), request.signal) : values.photo;
       photo = await preparePhoto(blob, request.signal);
     }
+    // await lets other events run, including logout or navigation. Recheck the
+    // request and identity after processing before saving to the current account.
     request.signal.throwIfAborted();
     if (!form.isConnected || auth.getCurrentUser()?.id !== userId) return;
     auth.updateProfilePhoto(photo);
     router.resolve();
-    document.querySelector("#profile-photo-file")?.focus();
+    document.querySelector("#edit-profile-photo")?.focus();
     showToast(photo ? "Profile photo saved." : "Profile photo removed.");
   } catch (error) {
     if (form.isConnected && (!request.signal.aborted || timedOut)) {
@@ -256,6 +307,8 @@ appRoot.addEventListener("error", (event) => {
   if (event.target instanceof HTMLImageElement && event.target.classList.contains("avatar-photo")) event.target.remove();
 }, true);
 
+// Event delegation: a single listener handles forms inserted by any page render.
+// data-form selects the workflow; data-action below selects button-only actions.
 appRoot.addEventListener("submit", (event) => {
   const form = event.target.closest("form[data-form]");
   if (!form) return;
@@ -267,7 +320,15 @@ appRoot.addEventListener("click", async (event) => {
   const action = event.target.closest("[data-action]");
   if (!action) return;
   const actionName = action.dataset.action;
-  if (actionName === "set-theme") {
+  if (actionName === "toggle-photo-options") {
+    setPhotoOptions(action.getAttribute("aria-expanded") !== "true", true);
+  } else if (actionName === "choose-photo-file") {
+    showPhotoEditor("file");
+  } else if (actionName === "choose-photo-url") {
+    showPhotoEditor("url");
+  } else if (actionName === "close-photo-editor") {
+    closePhotoEditor();
+  } else if (actionName === "set-theme") {
     setTheme(action.dataset.theme);
   } else if (actionName === "logout") {
     auth.logout();
@@ -306,7 +367,27 @@ appRoot.addEventListener("click", async (event) => {
   }
 });
 
+// Outside clicks and keyboard focus leaving the chooser dismiss it without
+// changing the photo or interrupting the page control the user moved to.
+document.addEventListener("click", (event) => {
+  if (!event.target.closest(".avatar-editor")) setPhotoOptions(false);
+});
+appRoot.addEventListener("focusout", (event) => {
+  if (event.target.closest(".avatar-editor") && !event.relatedTarget?.closest(".avatar-editor")) setPhotoOptions(false);
+});
+
 document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") {
+    const options = appRoot.querySelector("#photo-options");
+    const panel = appRoot.querySelector("#photo-editor");
+    if (options && !options.hidden) {
+      event.preventDefault();
+      setPhotoOptions(false, true);
+    } else if (panel && !panel.hidden) {
+      event.preventDefault();
+      closePhotoEditor();
+    }
+  }
   if (event.altKey && event.key.toLowerCase() === "r") {
     resetMockData();
     auth.logout();
@@ -315,4 +396,5 @@ document.addEventListener("keydown", (event) => {
   }
 });
 
+// hashchange only fires for later URL changes; render the initial URL explicitly.
 router.resolve();

@@ -7,6 +7,9 @@ function heading(title, subtitle) {
 }
 
 export function adminDashboardPage(summary, allTransactions, userLookup) {
+  // Records store user IDs instead of duplicating names everywhere. The supplied
+  // lookup function resolves those IDs for display while keeping storage access
+  // outside this template. Customer text still needs escaping in the admin view.
   const loans = summary.loans;
   const pending = loans.filter((loan) => loan.status === LOAN_STATUS.PENDING);
   const loanRows = pending.length ? pending.map((loan) => `<tr><td><strong>${escapeHTML(userLookup(loan.userId)?.fullName ?? "Customer")}</strong><span class="transaction-date">${escapeHTML(loan.purpose)}</span></td><td>${formatMoney(loan.amount)}</td><td>${formatDate(loan.createdAt)}</td><td><div class="d-flex gap-2 flex-wrap"><button class="btn btn-primary btn-sm" type="button" data-action="approve-loan" data-loan-id="${escapeHTML(loan.id)}">Approve</button><button class="btn btn-outline-secondary btn-sm" type="button" data-action="show-reject" data-loan-id="${escapeHTML(loan.id)}">Reject</button></div></td></tr><tr class="d-none" data-reject-row="${escapeHTML(loan.id)}"><td colspan="4"><form class="review-form" data-form="reject-loan" data-loan-id="${escapeHTML(loan.id)}"><label class="visually-hidden" for="reason-${escapeHTML(loan.id)}">Rejection reason</label><input class="form-control" id="reason-${escapeHTML(loan.id)}" name="reason" minlength="5" maxlength="180" placeholder="Reason for rejection" required><button class="btn btn-outline-secondary" type="submit">Confirm rejection</button></form></td></tr>`).join("") : `<tr><td colspan="4"><div class="empty-state">${icon("success")}<div>No pending requests to review.</div></div></td></tr>`;

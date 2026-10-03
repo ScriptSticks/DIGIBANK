@@ -15,12 +15,16 @@ export class Router {
   }
 
   navigateTo(path) {
+    // Assigning the same hash does not fire hashchange. Resolve it ourselves so
+    // actions can refresh the current screen as well as navigate to another one.
     const nextHash = `#${path.startsWith("/") ? path : `/${path}`}`;
     if (window.location.hash === nextHash) this.resolve();
     else window.location.hash = nextHash;
   }
 
   resolve() {
+    // Convert a URL like #/profile into a route lookup. Check redirects before
+    // rendering, and return after each one so two screens cannot render at once.
     let path = window.location.hash.slice(1) || "/";
     const route = this.routes[path];
     const currentUser = this.getUserById(this.getCurrentUser());
@@ -28,6 +32,8 @@ export class Router {
       this.navigateTo(currentUser.role === "ADMIN" ? "/admin" : "/dashboard");
       return;
     }
+    // These are navigation guards, not a security boundary. A production server
+    // must check the signed-in user's permissions on every protected operation.
     if (route?.admin && route.auth && currentUser?.role !== "ADMIN") {
       this.navigateTo("/admin/login");
       return;

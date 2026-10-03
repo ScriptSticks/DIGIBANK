@@ -14,6 +14,8 @@ function makeId(prefix) {
 }
 
 function makeAccountId() {
+  // Random numbers can collide. Check existing accounts and retry, then pad the
+  // result as a string so an account number beginning with zero keeps all 10 digits.
   let accountId;
   do {
     const digits = new Uint32Array(1);
@@ -37,6 +39,8 @@ export class AuthService {
   getCurrentUser() { return users.findById(this.stateManager.getCurrentUserId()); }
 
   updateProfilePhoto(photo) {
+    // Derive the owner from the current session rather than trusting a user ID
+    // from a form. null intentionally means "remove photo and show initials".
     const user = this.getCurrentUser();
     if (!user || user.role !== USER_ROLE.CUSTOMER) throw new Error("Sign in as a customer to update your photo.");
     if (photo !== null && !isSafePhoto(photo)) throw new Error("Choose a valid profile photo.");
@@ -44,6 +48,8 @@ export class AuthService {
   }
 
   signup(formValues) {
+    // Normalize before checking duplicates: surrounding spaces and email casing
+    // should not let the same address create multiple fictional accounts.
     const fullName = formValues.fullName.trim().replace(/\s+/g, " ");
     const username = formValues.username.trim().toLowerCase();
     const email = formValues.email.trim().toLowerCase();
@@ -61,6 +67,8 @@ export class AuthService {
   }
 
   login(emailValue, password, requiredRole = USER_ROLE.CUSTOMER) {
+    // Use the same failure message for an unknown email and an incorrect password.
+    // That avoids telling a visitor which of those two checks failed.
     const email = emailValue.trim().toLowerCase();
     const user = users.findByEmail(email);
     if (!user || this.credentials.get(email) !== password || user.role !== requiredRole) throw new Error("Email or password is incorrect.");
@@ -113,6 +121,9 @@ export class BankingService {
     const recipientBalance = recipientAccount.balance + amount;
     const reference = makeId("DB").toUpperCase();
     const createdAt = new Date().toISOString();
+    // The two account entries represent opposite sides of the same transfer and
+    // share a reference. These separate browser writes are only a simulation;
+    // a real backend must commit balances and records together in one transaction.
     accounts.update(senderAccount.accountId, { balance: senderBalance });
     accounts.update(recipientAccount.accountId, { balance: recipientBalance });
     transactions.createMany([
@@ -142,6 +153,8 @@ export class AdminService {
   }
 
   reviewLoan(adminUser, loanId, decision, reason = "") {
+    // Only pending requests can change status. Rechecking here prevents a normal
+    // repeated click from reviewing an already-completed request a second time.
     if (adminUser?.role !== USER_ROLE.ADMIN) throw new Error("Administrator access is required for this action.");
     const loan = loans.findById(loanId);
     if (!loan || loan.status !== LOAN_STATUS.PENDING) throw new Error("This request has already been reviewed or is unavailable.");

@@ -58,6 +58,10 @@ The Router uses the URL hash (for example `#/dashboard`) so the app can run from
 
 `StateManager` keeps the signed-in user ID in memory. Credentials, the recovery code, and the active session are not saved in local storage. As a result, reloading signs out and a newly registered account's password is forgotten; seed demo credentials work again after reload. This limitation is deliberate and avoids presenting browser storage as safe credential persistence.
 
+## Reading the Code
+
+Start with `index.html`, then `src/main.js` to follow startup, routing, rendering, and event handling. Next read `src/core/router.js`, a file in `src/pages/`, `src/services/services.js`, and `src/data/repositories.js` to trace a user action from the screen to storage. Comments explain why the layers are separated, how asynchronous work is cancelled, where HTML needs escaping, and which protections are only part of this frontend demo. For the photo flow, follow `src/components/profile-photo-editor.js` through the handlers in `main.js` to `src/core/profile-photo.js`.
+
 ## Demo Accounts
 
 Customer demo: `amina@digibank.test` / `DigiBankDemo!2026`  
@@ -75,7 +79,7 @@ Fictional user, account, transaction, loan, and notification records are stored 
 
 ### Profile photos
 
-Customers can save a device image or import a direct HTTPS image URL from their Profile page, or remove the photo to restore initials. The same photo appears on the dashboard. JPEG, PNG, and WebP inputs are limited to 8 MiB, 20 million pixels, and 8,192 pixels per side. Input signatures, declared MIME types, dimensions, and browser decoding are checked. SVG, HTML, GIF, and animated WebP inputs are rejected. Accepted images are center-cropped and re-encoded as a 256 × 256 JPEG, discarding original metadata and embedded extra content. A fixed circular avatar uses `object-fit: cover` and cannot grow with the source image.
+On Profile, customers click the pencil icon on their avatar to choose Upload from computer or Upload from URL. Only the selected form opens, inside the existing profile card. Escape or Cancel closes the editor; clicking outside the source chooser dismisses it. Customers can also remove their photo to restore initials. The same photo appears on the dashboard. JPEG, PNG, and WebP inputs are limited to 8 MiB, 20 million pixels, and 8,192 pixels per side. Input signatures, declared MIME types, dimensions, and browser decoding are checked. SVG, HTML, GIF, and animated WebP inputs are rejected. Accepted images are center-cropped and re-encoded as a 256 × 256 JPEG, discarding original metadata and embedded extra content. A fixed circular avatar uses `object-fit: cover` and cannot grow with the source image.
 
 URL imports require CORS permission from the image host. They omit credentials and referrers, reject redirects, block non-HTTPS schemes, embedded credentials, custom ports, IP literals, and common local hostname suffixes, cap streamed response bytes, and time out after 15 seconds. The URL host is contacted only when importing; the original URL is not saved or used for ongoing avatar display. Browser-side hostname checks cannot verify the public IP behind a DNS name. There is no server-side fetch proxy in this project.
 

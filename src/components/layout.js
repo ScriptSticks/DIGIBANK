@@ -15,6 +15,8 @@ function linkMarkup([path, label, iconName], activePath) {
 }
 
 export function renderShell(content, { currentUser, activePath, logoutPath = "/" }) {
+  // Customer and admin pages share this outer layout. Change common controls
+  // (theme, logout, navigation) here instead of duplicating them in every page.
   const isAdmin = currentUser.role === "ADMIN";
   const links = isAdmin ? adminLinks : customerLinks;
   const navLinks = links.map((item) => linkMarkup(item, activePath)).join("");

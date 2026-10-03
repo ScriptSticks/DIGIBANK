@@ -9,10 +9,14 @@ class BaseRepository {
   }
 
   all() {
+    // A new array lets callers sort/filter without rearranging stored records.
+    // This is a shallow copy: edit records through repository methods, not in place.
     return [...storage.data[this.collection]];
   }
 
   saveAll(records) {
+    // [this.collection] is a computed property name, such as "users" or "loans".
+    // Spread preserves every other collection while replacing only this one.
     storage.write({ ...storage.data, [this.collection]: records });
   }
 }
@@ -23,6 +27,8 @@ export class UserRepository extends BaseRepository {
   findByEmail(email) { return this.all().find((user) => user.email.toLowerCase() === email.toLowerCase()) ?? null; }
   create(user) { this.saveAll([...this.all(), user]); return user; }
   updatePhoto(userId, profilePhoto) {
+    // Construct a replacement record rather than mutating the existing user; a
+    // failed storage write can then leave the old in-memory record untouched.
     const users = this.all().map((user) => user.id === userId ? { ...user, profilePhoto } : user);
     storage.write({ ...storage.data, users }, { requirePersistence: true });
   }

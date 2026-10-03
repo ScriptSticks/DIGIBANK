@@ -1,3 +1,5 @@
+/* Components share these design tokens. The dark-theme block overrides colors
+   centrally instead of requiring a second copy of every component's CSS. */
 :root {
   --color-primary: #31d35c;
   --color-secondary: #2bb7da;
@@ -24,7 +26,10 @@ a { color: inherit; }
 button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 3px solid rgb(43 183 218 / 55%); outline-offset: 2px; }
 .skip-link { position: fixed; z-index: 20; top: 8px; left: 8px; transform: translateY(-150%); padding: 10px 14px; background: var(--color-white); }
 .skip-link:focus { transform: translateY(0); }
-/* Keep navigation in the viewport; the main panel owns dashboard scrolling. */
+/* Keep navigation in the viewport; the main panel owns dashboard scrolling.
+   min-height: 0 on its flex/grid ancestors lets that panel shrink below its
+   content height. Without it, long pages push sidebar controls below the screen.
+   100vh is a fallback; 100dvh follows the visible viewport as mobile browser bars move. */
 .app-shell { display: flex; flex-direction: column; height: 100vh; height: 100dvh; overflow: hidden; }
 .topbar { position: sticky; z-index: 5; top: 0; flex-shrink: 0; height: 72px; border-bottom: 1px solid var(--color-line); background: rgb(255 255 255 / 94%); backdrop-filter: blur(14px); }
 .topbar-inner { display: flex; align-items: center; justify-content: space-between; height: 100%; padding: 0 34px; }
@@ -81,8 +86,16 @@ h1, h2, h3, h4 { font-family: var(--font-display); }
 .quick-action small { display: block; margin-top: 3px; color: var(--color-muted); font-size: 11px; }
 .profile-row { display: flex; align-items: center; gap: 14px; }
 .avatar { position: relative; display: grid; flex: 0 0 46px; width: 46px; height: 46px; min-width: 46px; overflow: hidden; place-items: center; border-radius: 50%; background: #dff4e4; color: #217e38; font-family: var(--font-display); font-weight: 800; }
+/* Fixed avatar dimensions control layout; object-fit crops pixels without stretching
+   them. Absolute positioning also keeps oversized source images from growing the row. */
 .avatar-photo { position: absolute; inset: 0; display: block; width: 100%; height: 100%; object-fit: cover; object-position: center; border-radius: inherit; }
-.photo-editor { min-width: 0; }
+/* Clip only the image, not the surrounding edit control or its source chooser. */
+.avatar-editor { position: relative; flex: 0 0 46px; width: 46px; height: 46px; }
+.avatar-edit { position: absolute; right: -7px; bottom: -5px; display: grid; place-items: center; width: 30px; height: 30px; padding: 0; border: 2px solid var(--color-white); border-radius: 50%; background: var(--color-primary); color: #12331b; box-shadow: 0 2px 5px rgb(0 0 0 / 16%); }
+.avatar-edit .icon { width: 15px; height: 15px; }
+.photo-options { position: absolute; z-index: 7; top: calc(100% + 12px); left: 0; width: 228px; max-width: calc(100vw - 80px); padding: 6px; border: 1px solid var(--color-line); border-radius: 8px; background: var(--color-white); box-shadow: var(--shadow-soft); }
+.photo-options .side-link { gap: 9px; font-size: 12px; }
+.photo-editor { min-width: 0; padding: 18px 0; border-top: 1px solid var(--color-line); border-bottom: 1px solid var(--color-line); }
 .photo-editor fieldset { min-width: 0; }
 .photo-editor input[type="file"] { width: 100%; }
 .profile-row strong { display: block; }
@@ -232,6 +245,8 @@ h1, h2, h3, h4 { font-family: var(--font-display); }
   .welcome-main { gap: 25px; }
 }
 @media (max-width: 767.98px) {
+  /* Mobile navigation is fixed to the bottom. Reserve its height in the workspace
+     so the last scrolled content is still reachable above the navigation and safe area. */
   .topbar { height: 62px; }
   .topbar-inner { padding: 0 17px; }
   .secure-label { font-size: 10px; }
@@ -284,5 +299,6 @@ h1, h2, h3, h4 { font-family: var(--font-display); }
   .header-actions .secure-label { display: none; }
 }
 @media (prefers-reduced-motion: reduce) {
+  /* Respect the operating system's motion preference without changing page layout. */
   *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
 }
